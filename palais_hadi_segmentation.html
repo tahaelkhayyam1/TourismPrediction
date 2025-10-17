@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analyse de Segmentation – Palais HADI</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); padding:20px; min-height:100vh; }
+    .container { max-width:1400px; margin:0 auto; background:#fff; border-radius:20px; padding:40px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+
+    .header { text-align:center; margin-bottom:40px; padding-bottom:30px; border-bottom:3px solid #667eea; }
+    .header h1 { color:#2d3748; font-size:2.5em; margin-bottom:10px; font-weight:700; }
+    .header h2 { color:#667eea; font-size:1.5em; font-weight:500; }
+    .header p { color:#718096; font-size:1.1em; margin-top:10px; }
+
+    .slide { margin-bottom:50px; padding:30px; background:linear-gradient(to right,#f7fafc,#ffffff); border-radius:15px; border-left:5px solid #667eea; box-shadow:0 4px 15px rgba(0,0,0,.08); }
+    .slide h3 { color:#2d3748; font-size:1.8em; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+    .slide-number { background:#667eea; color:#fff; width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.8em; font-weight:700; }
+
+    .objective-box { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
+    .obj-card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.1); }
+    .obj-card h4 { color:#667eea; margin-bottom:10px; font-size:1.2em; }
+    .obj-card ul { list-style:none; padding-left:0; }
+    .obj-card li { padding:8px 0 8px 25px; position:relative; color:#4a5568; line-height:1.6; }
+    .obj-card li:before { content:"✓"; position:absolute; left:0; color:#667eea; font-weight:700; }
+
+    .segments-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-top:20px; }
+    .segment-card { background:#fff; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,.1); transition:transform .3s ease, box-shadow .3s ease; }
+    .segment-card:hover { transform:translateY(-5px); box-shadow:0 8px 25px rgba(0,0,0,.15); }
+    .segment-card h4 { font-size:1.3em; color:#2d3748; margin-bottom:15px; display:flex; align-items:center; gap:10px; }
+    .segment-card .flag { font-size:1.5em; }
+    .segment-card ul { list-style:none; padding:0; }
+    .segment-card li { padding:8px 0 8px 20px; color:#4a5568; line-height:1.5; position:relative; }
+    .segment-card li:before { content:"➤"; position:absolute; left:0; color:#667eea; }
+
+    .detail-card { background:#fff; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow:0 3px 12px rgba(0,0,0,.1); }
+    .detail-card h4 { color:#2d3748; font-size:1.4em; margin-bottom:15px; display:flex; align-items:center; gap:10px; }
+
+    .score-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin:15px 0; }
+    .score-item { background:#f7fafc; padding:15px; border-radius:8px; border-left:4px solid #667eea; }
+    .score-item strong { color:#2d3748; display:block; margin-bottom:5px; }
+    .stars { color:#fbbf24; font-size:1.2em; }
+    .description { background:#edf2f7; padding:15px; border-radius:8px; margin-top:15px; color:#4a5568; line-height:1.6; }
+
+    table { width:100%; border-collapse:collapse; margin-top:20px; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.1); }
+    thead { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; }
+    th,td { padding:15px; text-align:left; border-bottom:1px solid #e2e8f0; }
+    th { font-weight:600; font-size:.9em; text-transform:uppercase; letter-spacing:.5px; }
+    tbody tr:hover { background:#f7fafc; }
+
+    .priority-badge { display:inline-block; padding:5px 12px; border-radius:20px; font-weight:700; font-size:.9em; }
+    .p1 { background:#ffd700; color:#744210; }
+    .p2 { background:#c0c0c0; color:#4a5568; }
+    .p3 { background:#cd7f32; color:#fff; }
+    .p4 { background:#e2e8f0; color:#4a5568; }
+
+    .priority-visual { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:20px; }
+    .priority-box { background:#fff; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,.1); text-align:center; }
+    .priority-box h4 { color:#2d3748; margin-bottom:15px; font-size:1.2em; }
+    .priority-box ul { list-style:none; padding:0; }
+    .priority-box li { padding:10px; margin:5px 0; background:#f7fafc; border-radius:8px; color:#4a5568; font-weight:500; }
+
+    .usp-card { background:linear-gradient(135deg,#667eea15,#764ba215); padding:20px; border-radius:10px; margin-bottom:20px; border-left:5px solid #667eea; }
+    .usp-card h4 { color:#2d3748; margin-bottom:10px; font-size:1.2em; }
+    .usp-card p { color:#4a5568; line-height:1.7; font-style:italic; }
+
+    .master-usp { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; padding:30px; border-radius:15px; text-align:center; margin:30px 0; box-shadow:0 8px 25px rgba(102,126,234,.3); }
+    .master-usp h4 { font-size:1.5em; margin-bottom:15px; }
+    .master-usp p { font-size:1.1em; line-height:1.8; font-style:italic; }
+
+    .conclusion { background:linear-gradient(135deg,#2d3748,#4a5568); color:#fff; padding:30px; border-radius:15px; text-align:center; margin-top:30px; }
+    .conclusion h3 { color:#fff; margin-bottom:15px; }
+    .conclusion p { font-size:1.1em; line-height:1.8; }
+
+    .note { background:#fef3c7; border-left:4px solid #f59e0b; padding:15px; margin-top:15px; border-radius:5px; font-size:.9em; color:#78350f; }
+
+    @media print { body { background:#fff; padding:0; } .container { box-shadow:none; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Analyse de Segmentation – Palais HADI</h1>
+      <h2>Synthèse & Hiérarchisation des Segments Prioritaires</h2>
+      <p>Ciblage stratégique – Voyageurs Premium (France & International)</p>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <section class="slide" aria-labelledby="slide-01">
+      <h3 id="slide-01"><span class="slide-number">01</span> Objectif de l'Analyse</h3>
+      <div class="objective-box">
+        <div class="obj-card">
+          <h4>But</h4>
+          <ul>
+            <li>Identifier les segments les plus attractifs et réalisables pour le développement de la stratégie marketing du Palais HADI</li>
+          </ul>
+        </div>
+        <div class="obj-card">
+          <h4>Méthode</h4>
+          <ul>
+            <li><strong>Attractivité :</strong> taille, croissance, rentabilité, potentiel de fidélisation</li>
+            <li><strong>Faisabilité :</strong> accès, coûts, partenariats, adaptation de l'offre</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3 -->
+    <section class="slide" aria-labelledby="slide-02">
+      <h3 id="slide-02"><span class="slide-number">02</span> Top 5 Segments – Palais HADI</h3>
+      <div class="segments-grid">
+        <article class="segment-card">
+          <h4><span class="flag">🇫🇷</span> Voyageurs Premium France</h4>
+          <ul>
+            <li>1er bassin émetteur (≈35% des arrivées)</li>
+            <li>Recherche confort, authenticité, gastronomie</li>
+            <li><strong>Cible prioritaire</strong></li>
+          </ul>
+        </article>
+
+        <article class="segment-card">
+          <h4><span class="flag">🇬🇧</span> Premium Anglo-saxons (UK)</h4>
+          <ul>
+            <li>Fort pouvoir d'achat, goût pour le « boutique luxury »</li>
+            <li>Croissance solide depuis 2022</li>
+            <li><strong>Cible secondaire</strong></li>
+          </ul>
+        </article>
+
+        <article class="segment-card">
+          <h4><span class="flag">🇺🇸🇨🇦</span> Premium Américains / Canadiens</h4>
+          <ul>
+            <li>Haut pouvoir d'achat, expériences culturelles</li>
+            <li>Destination « exotique chic » en forte demande</li>
+            <li><strong>Cible secondaire</strong></li>
+          </ul>
+        </article>
+
+        <article class="segment-card">
+          <h4><span class="flag">🏛️</span> Professionnels / Événements Privés</h4>
+          <ul>
+            <li>Segment en reprise, fort levier B2B</li>
+            <li>Lisse la saisonnalité, rentabilité élevée</li>
+            <li><strong>Cible stratégique</strong></li>
+          </ul>
+        </article>
+
+        <article class="segment-card">
+          <h4><span class="flag">🇪🇸</span> Premium Hispanophones</h4>
+          <ul>
+            <li>Marché en croissance, affinité culturelle forte</li>
+            <li>Potentiel via campagnes digitales et influenceurs</li>
+            <li><strong>Cible émergente</strong></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- SLIDE 4–8 : ANALYSES DÉTAILLÉES -->
+    <section class="slide" aria-labelledby="slide-03">
+      <h3 id="slide-03"><span class="slide-number">03</span> Analyse Détaillée des Segments</h3>
+
+      <div class="detail-card">
+        <h4><span class="flag">🇫🇷</span> Segment #1 : Voyageurs Premium France</h4>
+        <p><strong>Synthèse :</strong> Clientèle cœur de marché : couples, familles, seniors actifs. Haut pouvoir d'achat, fidélité élevée, proximité logistique.</p>
+        <div class="score-grid">
+          <div class="score-item">
+            <strong>Attractivité globale</strong>
+            <div class="stars">★★★★★</div>
+            <span>Très attractif</span>
+          </div>
+          <div class="score-item">
+            <strong>Faisabilité globale</strong>
+            <div class="stars">★★★★★</div>
+            <span>Très faisable</span>
+          </div>
+        </div>
+        <div class="description">
+          Segment très attractif grâce au volume et à la fidélité des clients. Facilement atteignable via les canaux existants, avec coûts d'acquisition modérés et infrastructure logistique optimisée.
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h4><span class="flag">🇬🇧🇺🇸</span> Segment #2 : Premium Anglo-saxons</h4>
+        <p><strong>Synthèse :</strong> Voyageurs expérimentés, digitalisés, sensibles à l'authenticité et à l'exclusivité. Marché exigeant mais en forte croissance.</p>
+        <div class="score-grid">
+          <div class="score-item">
+            <strong>Attractivité globale</strong>
+            <div class="stars">★★★★★</div>
+            <span>Très attractif</span>
+          </div>
+          <div class="score-item">
+            <strong>Faisabilité globale</strong>
+            <div class="stars">★★★★☆</div>
+            <span>Assez faisable</span>
+          </div>
+        </div>
+        <div class="description">
+          Segment très attractif par le pouvoir d'achat et la demande croissante. Faisabilité moyenne, nécessitant partenariats spécifiques et marketing digital international ciblé.
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h4><span class="flag">🏛️</span> Segment #3 : Professionnels & Événements Privés</h4>
+        <p><strong>Synthèse :</strong> Marché MICE haut de gamme, mariages et retraites d'entreprise. Fort levier sur les périodes creuses, haut rendement.</p>
+        <div class="score-grid">
+          <div class="score-item">
+            <strong>Attractivité globale</strong>
+            <div class="stars">★★★★★</div>
+            <span>Très attractif</span>
+          </div>
+          <div class="score-item">
+            <strong>Faisabilité globale</strong>
+            <div class="stars">★★★★☆</div>
+            <span>Faisable avec plan B2B</span>
+          </div>
+        </div>
+        <div class="description">
+          Très attractif pour ses marges et volumes ponctuels. Faisabilité solide via partenariats B2B et infrastructures existantes, idéal pour lisser la saisonnalité.
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h4><span class="flag">🇺🇸🇨🇦</span> Segment #4 : Premium Américains / Canadiens</h4>
+        <p><strong>Synthèse :</strong> Clientèle hautement qualitative, séjours longs, dépenses élevées. Marché en croissance post‑COVID, sensible au branding culturel.</p>
+        <div class="score-grid">
+          <div class="score-item">
+            <strong>Attractivité globale</strong>
+            <div class="stars">★★★★☆</div>
+            <span>Attractif</span>
+          </div>
+          <div class="score-item">
+            <strong>Faisabilité globale</strong>
+            <div class="stars">★★★☆☆</div>
+            <span>Assez faisable</span>
+          </div>
+        </div>
+        <div class="description">
+          Segment attractif grâce au panier moyen élevé. Faisabilité limitée par la distance et le besoin de marketing digital international ciblé.
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h4><span class="flag">🇪🇸</span> Segment #5 : Premium Hispanophones</h4>
+        <p><strong>Synthèse :</strong> Deux sous‑marchés : Espagne (croissance rapide) et Amérique Latine (haut potentiel culturel). Forte affinité avec l'univers andalou et le patrimoine marocain.</p>
+        <div class="score-grid">
+          <div class="score-item">
+            <strong>Attractivité globale</strong>
+            <div class="stars">★★★★☆</div>
+            <span>Attractif</span>
+          </div>
+          <div class="score-item">
+            <strong>Faisabilité globale</strong>
+            <div class="stars">★★★☆☆</div>
+            <span>Assez faisable</span>
+          </div>
+        </div>
+        <div class="description">
+          Segment attractif pour son potentiel culturel et sa proximité. Faisabilité moyenne, demandant campagnes digitales ciblées et partenariats locaux.
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9 : TABLEAU COMPARATIF -->
+    <section class="slide" aria-labelledby="slide-04">
+      <h3 id="slide-04"><span class="slide-number">04</span> Classement Comparatif Final</h3>
+      <table aria-label="Classement comparatif des segments">
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th>Score Total (/50)</th>
+            <th>Volume Actuel</th>
+            <th>Croissance</th>
+            <th>Marges</th>
+            <th>CAC</th>
+            <th>ROI</th>
+            <th>Priorité</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Premium France</strong></td>
+            <td><strong>44</strong></td>
+            <td>400–500K</td>
+            <td>+17%</td>
+            <td>Élevées</td>
+            <td>Bas</td>
+            <td>15–25×</td>
+            <td><span class="priority-badge p1">🥇 #1</span></td>
+          </tr>
+          <tr>
+            <td><strong>Premium Anglo‑saxons</strong></td>
+            <td><strong>43</strong></td>
+            <td>15–25K events</td>
+            <td>+20%</td>
+            <td>Très élevées</td>
+            <td>Élevé</td>
+            <td>25–100×</td>
+            <td><span class="priority-badge p2">🥈 #2</span></td>
+          </tr>
+          <tr>
+            <td><strong>Événementiel privé / Pro</strong></td>
+            <td><strong>41</strong></td>
+            <td>200–300K</td>
+            <td>+27%</td>
+            <td>Très élevées</td>
+            <td>Moyen</td>
+            <td>10–20×</td>
+            <td><span class="priority-badge p3">🥉 #3</span></td>
+          </tr>
+          <tr>
+            <td><strong>Premium USA / Canada</strong></td>
+            <td><strong>40</strong></td>
+            <td>150–200K</td>
+            <td>+14%</td>
+            <td>Très élevées</td>
+            <td>Élevé</td>
+            <td>8–15×</td>
+            <td><span class="priority-badge p4">#4</span></td>
+          </tr>
+          <tr>
+            <td><strong>Premium Hispanophones</strong></td>
+            <td><strong>39</strong></td>
+            <td>300–400K</td>
+            <td>+19%</td>
+            <td>Moyennes</td>
+            <td>Bas</td>
+            <td>12–25×</td>
+            <td><span class="priority-badge p4">#5</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>📒 Notes :</strong><br />
+        <strong>CAC</strong> (Coût d'Acquisition Client) : montant moyen dépensé pour acquérir un nouveau client dans le segment.<br />
+        <strong>ROI</strong> (Return on Investment) : multiple de retour attendu par rapport aux dépenses marketing et commerciales pour ce segment.
+      </div>
+    </section>
+
+    <!-- SLIDE 10 : PRIORISATION -->
+    <section class="slide" aria-labelledby="slide-05">
+      <h3 id="slide-05"><span class="slide-number">05</span> Priorisation Stratégique</h3>
+      <div class="priority-visual">
+        <div class="priority-box" style="border-top:5px solid #ffd700;">
+          <h4>Cible Prioritaire #1</h4>
+          <ul>
+            <li>Voyageurs Premium France</li>
+          </ul>
+        </div>
+        <div class="priority-box" style="border-top:5px solid #c0c0c0;">
+          <h4>Cible Prioritaire #2</h4>
+          <ul>
+            <li>Anglo‑saxons</li>
+          </ul>
+        </div>
+        <div class="priority-box" style="border-top:5px solid #cd7f32;">
+          <h4>Cible Prioritaire #3</h4>
+          <ul>
+            <li>Événements privés / B2B</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11 : USP -->
+    <section class="slide" aria-labelledby="slide-06">
+      <h3 id="slide-06"><span class="slide-number">06</span> Promesses de Valeur par Segment (USP)</h3>
+
+      <div class="usp-card">
+        <h4>Segment Prioritaire #1 : Voyageurs Premium France</h4>
+        <p>« Pour les voyageurs français exigeants en quête d'authenticité, le Palais HADI est le seul palais qui transforme chaque séjour en une expérience culturelle intime et raffinée, parce que nous combinons un patrimoine architectural préservé avec un service personnalisé. »</p>
+      </div>
+
+      <div class="usp-card">
+        <h4>🇬🇧 Segment Prioritaire #2 : Anglo‑saxons</h4>
+        <p>“For discerning international travelers seeking unique comfortable accommodation, Palais HADI is the only palace that delivers an immersive Moroccan experience with refined comfort, because we provide customised service.”</p>
+      </div>
+
+      <div class="usp-card">
+        <h4>Segment Prioritaire #3 : Événements Privés & B2B</h4>
+        <p>« Pour les entreprises et particuliers à la recherche d'un cadre d'exception, le Palais HADI est l'endroit idéal pour vos événements privés dans un palais exclusif, parce que nous offrons une privatisation totale avec une scénographie sur‑mesure dans un décor unique. »</p>
+      </div>
+
+      <div class="usp-card">
+        <h4>Segment Secondaire #4 : Hispanophones</h4>
+        <p>« Para los viajeros exigentes en busca de autenticidad, el Palacio HADI es el único palacio que transforma cada estancia en una experiencia cultural íntima y refinada, porque combinamos un patrimonio arquitectónico preservado con un servicio personalizado. »</p>
+      </div>
+
+      <div class="master-usp">
+        <h4>PROMESSE DE VALEUR GLOBALE (Master Brand Promise)</h4>
+        <p>« Le Palais HADI est l'unique palais au Maroc où l'âme du patrimoine rencontre l'art de l'hospitalité contemporaine, offrant aux voyageurs les plus exigeants une expérience intime et exclusive qui transcende le séjour pour devenir un voyage dans le temps. »</p>
+      </div>
+    </section>
+
+    <!-- CONCLUSION -->
+    <section class="conclusion" aria-labelledby="slide-07">
+      <h3 id="slide-07">Conclusion Stratégique</h3>
+      <p>Le Palais HADI doit concentrer ses efforts 2025 sur le marché premium France et la diversification B2B/événementielle, tout en amorçant une expansion digitale sélective vers les marchés anglo‑saxons et hispanophones.</p>
+    </section>
+  </div>
+</body>
+</html>
